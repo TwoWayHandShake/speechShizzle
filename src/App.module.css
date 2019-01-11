@@ -24,13 +24,17 @@ img {
 .SearchWrapper {
 	position: absolute;
 	font-family: "Inknut Antiqua", serif;
+
 	color: black;
+	margin: 0;
+	padding: 0;
 	right: 0vw;
 	left: 0;
 	top: 40vh;
 	text-align: center;
 	font-weight: bold;
 	font-size: 15vw;
+	line-height: 10vw;
 }
 
 .HintWrapper {
