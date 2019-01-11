@@ -14,6 +14,7 @@ interface IState {
 	debug: boolean;
 	nouns: string;
 	verbs: string;
+	userHasInteracted: boolean;
 }
 
 interface IProps {}
@@ -33,7 +34,8 @@ class App extends React.PureComponent<IProps, IState> {
 			imageSrc: "",
 			debug: false,
 			nouns: "",
-			verbs: ""
+			verbs: "",
+			userHasInteracted: false
 		};
 	}
 
@@ -78,7 +80,7 @@ class App extends React.PureComponent<IProps, IState> {
 	debounceImageUpdate = debounce(this.updateImage, 300);
 
 	private renderHint() {
-		return this.state.transcription ? null : (
+		return this.state.userHasInteracted ? null : (
 			<div className={styles.typist}>
 				<Typist>Talk to me</Typist>
 			</div>
@@ -136,6 +138,13 @@ class App extends React.PureComponent<IProps, IState> {
 			};
 		}
 
+		if (/money|pesos|euro|dollar/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(styles.search, styles.textGreen, "animated", "infinite", "flash")
+			};
+		}
+
 		if (/rotate|spin|turn/gi.test(text)) {
 			return {
 				...defaultTheme,
@@ -152,6 +161,7 @@ class App extends React.PureComponent<IProps, IState> {
 			this.debounceImageUpdate();
 		}
 		this.setState({
+			userHasInteracted: true,
 			item: change.word,
 			transcription: change.full,
 			verbs: change.verbs,
