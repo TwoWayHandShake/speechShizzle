@@ -1,16 +1,11 @@
-import axios from "axios";
-import * as nlp from "compromise";
 import React from "react";
 import classNames from "classnames";
 import Typist from "react-typist";
+import debounce from "debounce";
 import styles from "./App.module.css";
 import "animate.css";
-
-interface IExtendedWindow extends Window {
-	webkitSpeechRecognition: any;
-}
-
-const extendedWindow = window as IExtendedWindow;
+import { SpeechListener, ISpeechChange } from "./SpeechListener";
+import { getImage } from "./giphy";
 
 interface IState {
 	transcription: string;
@@ -43,14 +38,7 @@ class App extends React.PureComponent<IProps, IState> {
 	}
 
 	componentDidMount() {
-		this.initSpeechRecognition();
 		document.addEventListener("keydown", this.toggleDebugView, false);
-	}
-
-	componentDidUpdate(prevProps: IProps, prevState: IState) {
-		if (prevState.item !== this.state.item) {
-			this.updateImage();
-		}
 	}
 
 	toggleDebugView = (event: any) => {
@@ -70,69 +58,16 @@ class App extends React.PureComponent<IProps, IState> {
 		return text.trim();
 	};
 
-	initSpeechRecognition = () => {
-		const recognition = new extendedWindow.webkitSpeechRecognition();
-		recognition.continuous = true;
-		recognition.interimResults = true;
-		recognition.lang = "en-US";
-
-		recognition.onresult = (event: any) => {
-			for (let i = event.resultIndex; i < event.results.length; ++i) {
-				const resultChunk = event.results[i][0].transcript;
-				const transcription = resultChunk;
-				const processedLanguage = nlp(transcription);
-				const extractedNouns = processedLanguage.nouns().out("text");
-
-				const extractedVerbs = processedLanguage.verbs().out("text");
-
-				this.setState({
-					nouns: extractedNouns,
-					verbs: extractedVerbs
-				});
-
-				let text = this.splitGetLast(extractedNouns) || this.splitGetLast(extractedVerbs);
-
-				if (text) {
-					this.setState({
-						item: text
-					});
-				}
-
-				this.setState({
-					transcription
-				});
-			}
-		};
-
-		recognition.start();
-	};
-
 	updateImage = async () => {
 		const { item } = this.state;
 		if (!item) {
 			return;
 		}
+		console.log("Update image", item);
 		try {
-			const keys = [
-				"098bp5rbz5oRCsbNqOfrDJT5EecbSCXs",
-				"qsJL0hUiBazkjkQTZWvgFX2ATawYOHcp",
-				"ppRcLc2j7uB49TVrVAslibdoTZewMPGM",
-				"x8D6sHzDy0H4Q959Cm19GNvh0Ydb5Pr5",
-				"zyk0hiXD6TduvPafJumM6UBdSQCcZSNb",
-				"kxOy2220algKcmTAdh82ARfxpGhNeVMf",
-				"4Nu26m9hRLo1ZOv9mXu1QNJptIUTIN2u"
-			];
-
-			const apiKey = keys[Math.floor(keys.length * Math.random())];
-			const url = `https://api.giphy.com/v1/gifs/random?tag=${item.toLowerCase()}&api_key=${apiKey}&limit=1`;
-			const {
-				data: {
-					data: { image_url }
-				}
-			} = await axios.get(url);
-
+			const url = await getImage(item);
 			this.setState({
-				imageSrc: image_url
+				imageSrc: url
 			});
 		} catch (e) {
 			this.updateImage();
@@ -140,9 +75,11 @@ class App extends React.PureComponent<IProps, IState> {
 		}
 	};
 
+	debounceImageUpdate = debounce(this.updateImage, 300);
+
 	private renderHint() {
 		return this.state.transcription ? null : (
-			<div className={styles.HintWrapper}>
+			<div className={styles.typist}>
 				<Typist>Talk to me</Typist>
 			</div>
 		);
@@ -150,7 +87,7 @@ class App extends React.PureComponent<IProps, IState> {
 
 	private renderDebug() {
 		return this.state.debug ? (
-			<div className={styles.StateWrapper}>
+			<div className={styles.debug}>
 				<pre>{JSON.stringify(this.state, null, 2)}</pre>
 			</div>
 		) : null;
@@ -158,68 +95,77 @@ class App extends React.PureComponent<IProps, IState> {
 
 	private getTheme(): ITheme {
 		const defaultTheme = {
-			search: styles.SearchWrapper,
-			background: styles.backgroundWrapper,
-			transcription: styles.RecognitionWrapper
+			search: styles.search,
+			background: styles.background,
+			transcription: styles.transcription
 		};
-		const text = this.state.transcription;
+		const text = this.state.item;
 		if (/trump|banana/gi.test(text)) {
 			return {
 				...defaultTheme,
-				search: classNames(styles.SearchWrapper, styles.textYellow, "animated", "rotateIn"),
-				transcription: classNames(styles.RecognitionWrapper, styles.textYellow)
+				search: classNames(styles.search, styles.textYellow, "animated", "rotateIn"),
+				transcription: classNames(styles.transcription, styles.textYellow)
 			};
 		}
 
 		if (/bounce|jump|run/gi.test(text)) {
 			return {
 				...defaultTheme,
-				search: classNames(styles.SearchWrapper, "animated", "bounceIn")
+				search: classNames(styles.search, "animated", "bounceIn")
 			};
 		}
 
 		if (/dance|shake|sex/gi.test(text)) {
 			return {
 				...defaultTheme,
-				search: classNames(styles.SearchWrapper, "animated", "shake")
+				search: classNames(styles.search, "animated", "shake")
 			};
 		}
 
-		if (/penis|tits/gi.test(text)) {
+		if (/penis/gi.test(text)) {
 			return {
 				...defaultTheme,
-				search: classNames(
-					styles.SearchWrapper,
-					styles.SearchWrapperTop,
-					"animated",
-					"hinge",
-					"delay-1s",
-					"slow"
-				)
+				search: classNames(styles.search, styles.searchTop, "animated", "hinge", "delay-1s", "slow")
 			};
 		}
 
-		if (/heart|nervous|love/gi.test(text)) {
+		if (/heart|nervous|love|kiss/gi.test(text)) {
 			return {
 				...defaultTheme,
-				search: classNames(
-					styles.SearchWrapper,
-					styles.textRed,
-					"animated",
-					"infinite",
-					"heartBeat"
-				)
+				search: classNames(styles.search, styles.textRed, "animated", "infinite", "heartBeat")
 			};
 		}
 
 		if (/rotate|spin|turn/gi.test(text)) {
 			return {
 				...defaultTheme,
-				search: classNames(styles.SearchWrapper, "animated", "rotateIn")
+				search: classNames(styles.search, "animated", "rotateIn")
 			};
 		}
 
 		return defaultTheme;
+	}
+
+	handleSpeechChange = (change: ISpeechChange) => {
+		console.log("Speech changed", change);
+		if (change.word && change.word !== this.state.item) {
+			this.debounceImageUpdate();
+		}
+		this.setState({
+			item: change.word,
+			transcription: change.full,
+			verbs: change.verbs,
+			nouns: change.nouns
+		});
+	};
+
+	private randomColor() {
+		var letters = "0123456789ABCDEF";
+		var color = "#";
+		for (var i = 0; i < 6; i++) {
+			color += letters[Math.floor(Math.random() * 16)];
+		}
+		return color;
 	}
 
 	render(): React.ReactNode {
@@ -228,18 +174,22 @@ class App extends React.PureComponent<IProps, IState> {
 		const theme = this.getTheme();
 
 		return (
-			<div className={styles.root}>
-				{this.renderDebug()}
-				<div className={theme.transcription}>{transcription}</div>
-				<div className={theme.search}>
-					<span>#</span>
-					{item}
+			<>
+				<SpeechListener onChange={this.handleSpeechChange} />
+				<div className={styles.root}>
+					{this.renderDebug()}
+					<div className={theme.search}>
+						<span>#</span>
+						{item}
+					</div>
+					<div className={theme.transcription}>{transcription}</div>
+					{this.renderHint()}
+					<div
+						className={theme.background}
+						style={{ backgroundImage: `url(${imageSrc})`, backgroundColor: this.randomColor() }}
+					/>
 				</div>
-				{this.renderHint()}
-				<div className={theme.background} style={{ backgroundImage: `url(${imageSrc})` }}>
-					{/* <img src={imageSrc} alt="" /> */}
-				</div>
-			</div>
+			</>
 		);
 	}
 }
