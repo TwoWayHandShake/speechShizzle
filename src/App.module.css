@@ -51,6 +51,7 @@ img {
 
 .StateWrapper {
 	background: white;
+	word-wrap: break-word;
 	padding: 5px;
 	top: 10px;
 	left: 10px;
