@@ -55,20 +55,31 @@ class App extends React.PureComponent<IProps, IState> {
 	initSpeechRecognition = () => {
 		recognition.continuous = true;
 		recognition.interimResults = true;
+		recognition.lang = "en-US";
 
 		recognition.onresult = (event: any) => {
 			for (let i = event.resultIndex; i < event.results.length; ++i) {
-				let resultChunk = event.results[i][0].transcript;
-				let transcription = resultChunk;
-				let extractedNoun = nlp(transcription)
-					.match("#Noun")
+				const resultChunk = event.results[i][0].transcript;
+				const transcription = resultChunk;
+				const extractedNoun = nlp(transcription)
+					.nouns()
 					.out("text");
+
+				let text = extractedNoun;
+
+				const nouns = extractedNoun.split(" ");
+
+				if (nouns.length) {
+					text = nouns.reverse()[0];
+				}
+
 				this.setState({
-					item: extractedNoun,
+					item: text,
 					transcription
 				});
 			}
 		};
+
 		recognition.start();
 	};
 
@@ -88,10 +99,7 @@ class App extends React.PureComponent<IProps, IState> {
 	};
 
 	private renderHint() {
-		if (this.state.item) {
-			return null;
-		}
-		return (
+		return this.state.transcription ? null : (
 			<div className={styles.HintWrapper}>
 				<Typist>Talk to me</Typist>
 			</div>
