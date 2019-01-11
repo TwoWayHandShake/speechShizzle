@@ -1,6 +1,7 @@
-import React from "react";
 import * as nlp from "compromise";
+import React from "react";
 import Typist from "react-typist";
+import axios from "axios";
 import styles from "./App.module.css";
 
 interface IExtendedWindow extends Window {
@@ -8,7 +9,6 @@ interface IExtendedWindow extends Window {
 }
 
 const extendedWindow = window as IExtendedWindow;
-const recognition = new extendedWindow.webkitSpeechRecognition();
 
 interface IState {
 	transcription: string;
@@ -42,10 +42,8 @@ class App extends React.PureComponent<IProps, IState> {
 	}
 
 	toggleDebugView = (event: any) => {
-		console.log("press");
-
+		// d
 		if (event.keyCode == 68) {
-			// d
 			this.setState({
 				debug: !this.state.debug
 			});
@@ -53,6 +51,7 @@ class App extends React.PureComponent<IProps, IState> {
 	};
 
 	initSpeechRecognition = () => {
+		const recognition = new extendedWindow.webkitSpeechRecognition();
 		recognition.continuous = true;
 		recognition.interimResults = true;
 		recognition.lang = "en-US";
@@ -73,8 +72,13 @@ class App extends React.PureComponent<IProps, IState> {
 					text = nouns.reverse()[0];
 				}
 
+				if (text) {
+					this.setState({
+						item: text
+					});
+				}
+
 				this.setState({
-					item: text,
 					transcription
 				});
 			}
@@ -85,16 +89,32 @@ class App extends React.PureComponent<IProps, IState> {
 
 	updateImage = async () => {
 		const { item } = this.state;
+		if (!item) {
+			return;
+		}
 		try {
-			const res = await fetch(
-				`http://api.giphy.com/v1/gifs/random?tag=${item.toLowerCase()}&api_key=qsJL0hUiBazkjkQTZWvgFX2ATawYOHcp&limit=1`
-			);
-			const giphyData = await res.json();
+			const keys = [
+				"098bp5rbz5oRCsbNqOfrDJT5EecbSCXs",
+				"qsJL0hUiBazkjkQTZWvgFX2ATawYOHcp",
+				"ppRcLc2j7uB49TVrVAslibdoTZewMPGM",
+				"x8D6sHzDy0H4Q959Cm19GNvh0Ydb5Pr5",
+				"zyk0hiXD6TduvPafJumM6UBdSQCcZSNb",
+				"4Nu26m9hRLo1ZOv9mXu1QNJptIUTIN2u"
+			];
+
+			const apiKey = keys[Math.floor(keys.length * Math.random())];
+			const url = `https://api.giphy.com/v1/gifs/random?tag=${item.toLowerCase()}&api_key=${apiKey}&limit=1`;
+			const {
+				data: {
+					data: { image_url }
+				}
+			} = await axios.get(url);
+
 			this.setState({
-				imageSrc: giphyData.data.image_url
+				imageSrc: image_url
 			});
 		} catch (e) {
-			console.log(`Cannot update gif for item ${item}`, e);
+			console.log(`Cannot update gif for item: ${item}`, e);
 		}
 	};
 
