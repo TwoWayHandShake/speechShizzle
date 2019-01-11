@@ -114,6 +114,7 @@ class App extends React.PureComponent<IProps, IState> {
 				imageSrc: image_url
 			});
 		} catch (e) {
+			this.updateImage();
 			console.log(`Cannot update gif for item: ${item}`, e);
 		}
 	};
