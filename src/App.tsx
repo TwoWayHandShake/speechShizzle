@@ -15,6 +15,8 @@ interface IState {
 	item: string;
 	imageSrc: string;
 	debug: boolean;
+	nouns: string;
+	verbs: string;
 }
 
 interface IProps {}
@@ -26,7 +28,9 @@ class App extends React.PureComponent<IProps, IState> {
 			transcription: "",
 			item: "",
 			imageSrc: "",
-			debug: false
+			debug: false,
+			nouns: "",
+			verbs: ""
 		};
 	}
 
@@ -50,6 +54,14 @@ class App extends React.PureComponent<IProps, IState> {
 		}
 	};
 
+	splitGetLast = (text: string) => {
+		const split = text.split(" ");
+		if (split.length) {
+			return split.reverse()[0].trim();
+		}
+		return text.trim();
+	};
+
 	initSpeechRecognition = () => {
 		const recognition = new extendedWindow.webkitSpeechRecognition();
 		recognition.continuous = true;
@@ -60,17 +72,17 @@ class App extends React.PureComponent<IProps, IState> {
 			for (let i = event.resultIndex; i < event.results.length; ++i) {
 				const resultChunk = event.results[i][0].transcript;
 				const transcription = resultChunk;
-				const extractedNoun = nlp(transcription)
-					.nouns()
-					.out("text");
+				const processedLanguage = nlp(transcription);
+				const extractedNouns = processedLanguage.nouns().out("text");
 
-				let text = extractedNoun;
+				const extractedVerbs = processedLanguage.verbs().out("text");
 
-				const nouns = extractedNoun.split(" ");
+				this.setState({
+					nouns: extractedNouns,
+					verbs: extractedVerbs
+				});
 
-				if (nouns.length) {
-					text = nouns.reverse()[0];
-				}
+				let text = this.splitGetLast(extractedNouns) || this.splitGetLast(extractedVerbs);
 
 				if (text) {
 					this.setState({
@@ -99,6 +111,7 @@ class App extends React.PureComponent<IProps, IState> {
 				"ppRcLc2j7uB49TVrVAslibdoTZewMPGM",
 				"x8D6sHzDy0H4Q959Cm19GNvh0Ydb5Pr5",
 				"zyk0hiXD6TduvPafJumM6UBdSQCcZSNb",
+				"kxOy2220algKcmTAdh82ARfxpGhNeVMf",
 				"4Nu26m9hRLo1ZOv9mXu1QNJptIUTIN2u"
 			];
 
@@ -138,7 +151,7 @@ class App extends React.PureComponent<IProps, IState> {
 	render(): React.ReactNode {
 		const { item, transcription, imageSrc } = this.state;
 		return (
-			<div className={styles.App}>
+			<div className={styles.root}>
 				{this.renderDebug()}
 				<div className={styles.RecognitionWrapper}>{transcription}</div>
 				<div className={styles.SearchWrapper}>
@@ -146,7 +159,9 @@ class App extends React.PureComponent<IProps, IState> {
 					{item}
 				</div>
 				{this.renderHint()}
-				<img src={imageSrc} alt="" />
+				<div className={styles.backgroundWrapper} style={{ backgroundImage: `url(${imageSrc})` }}>
+					{/* <img src={imageSrc} alt="" /> */}
+				</div>
 			</div>
 		);
 	}
