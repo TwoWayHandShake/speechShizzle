@@ -24,7 +24,6 @@ img {
 .SearchWrapper {
 	position: absolute;
 	font-family: "Inknut Antiqua", serif;
-
 	color: black;
 	margin: 0;
 	padding: 0;
@@ -38,7 +37,8 @@ img {
 }
 
 .HintWrapper {
-	color: blue;
+	font-family: "Space Mono", monospace;
+	color: gray;
 	position: absolute;
 	right: 0vw;
 	left: 0;
