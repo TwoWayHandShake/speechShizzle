@@ -1,8 +1,10 @@
+import axios from "axios";
 import * as nlp from "compromise";
 import React from "react";
+import classNames from "classnames";
 import Typist from "react-typist";
-import axios from "axios";
 import styles from "./App.module.css";
+import "animate.css";
 
 interface IExtendedWindow extends Window {
 	webkitSpeechRecognition: any;
@@ -20,6 +22,12 @@ interface IState {
 }
 
 interface IProps {}
+
+interface ITheme {
+	search: string;
+	background: string;
+	transcription: string;
+}
 
 class App extends React.PureComponent<IProps, IState> {
 	constructor(props: IProps) {
@@ -148,18 +156,87 @@ class App extends React.PureComponent<IProps, IState> {
 		) : null;
 	}
 
+	private getTheme(): ITheme {
+		const defaultTheme = {
+			search: styles.SearchWrapper,
+			background: styles.backgroundWrapper,
+			transcription: styles.RecognitionWrapper
+		};
+		const text = this.state.transcription;
+		if (/trump|banana/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(styles.SearchWrapper, styles.textYellow, "animated", "rotateIn"),
+				transcription: classNames(styles.RecognitionWrapper, styles.textYellow)
+			};
+		}
+
+		if (/bounce|jump|run/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(styles.SearchWrapper, "animated", "bounceIn")
+			};
+		}
+
+		if (/dance|shake|sex/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(styles.SearchWrapper, "animated", "shake")
+			};
+		}
+
+		if (/penis|tits/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(
+					styles.SearchWrapper,
+					styles.SearchWrapperTop,
+					"animated",
+					"hinge",
+					"delay-1s",
+					"slow"
+				)
+			};
+		}
+
+		if (/heart|nervous|love/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(
+					styles.SearchWrapper,
+					styles.textRed,
+					"animated",
+					"infinite",
+					"heartBeat"
+				)
+			};
+		}
+
+		if (/rotate|spin|turn/gi.test(text)) {
+			return {
+				...defaultTheme,
+				search: classNames(styles.SearchWrapper, "animated", "rotateIn")
+			};
+		}
+
+		return defaultTheme;
+	}
+
 	render(): React.ReactNode {
 		const { item, transcription, imageSrc } = this.state;
+
+		const theme = this.getTheme();
+
 		return (
 			<div className={styles.root}>
 				{this.renderDebug()}
-				<div className={styles.RecognitionWrapper}>{transcription}</div>
-				<div className={styles.SearchWrapper}>
+				<div className={theme.transcription}>{transcription}</div>
+				<div className={theme.search}>
 					<span>#</span>
 					{item}
 				</div>
 				{this.renderHint()}
-				<div className={styles.backgroundWrapper} style={{ backgroundImage: `url(${imageSrc})` }}>
+				<div className={theme.background} style={{ backgroundImage: `url(${imageSrc})` }}>
 					{/* <img src={imageSrc} alt="" /> */}
 				</div>
 			</div>
