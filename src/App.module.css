@@ -55,3 +55,14 @@ img {
 	font-size: 80px;
 	/* letter-spacing: -.8vw; */
 }
+
+.StateWrapper {
+	background: white;
+	padding: 5px;
+	top: 10px;
+	left: 10px;
+	margin: 20px;
+	opacity: 0.9;
+	border-radius: 2px;
+	max-width: 600px;
+}

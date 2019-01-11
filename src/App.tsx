@@ -14,6 +14,7 @@ interface IState {
 	transcription: string;
 	item: string;
 	imageSrc: string;
+	debug: boolean;
 }
 
 interface IProps {}
@@ -24,12 +25,14 @@ class App extends React.PureComponent<IProps, IState> {
 		this.state = {
 			transcription: "",
 			item: "",
-			imageSrc: " "
+			imageSrc: "",
+			debug: false
 		};
 	}
 
 	componentDidMount() {
 		this.initSpeechRecognition();
+		document.addEventListener("keydown", this.toggleDebugView, false);
 	}
 
 	componentDidUpdate(prevProps: IProps, prevState: IState) {
@@ -37,6 +40,17 @@ class App extends React.PureComponent<IProps, IState> {
 			this.updateImage();
 		}
 	}
+
+	toggleDebugView = (event: any) => {
+		console.log("press");
+
+		if (event.keyCode == 68) {
+			// d
+			this.setState({
+				debug: !this.state.debug
+			});
+		}
+	};
 
 	initSpeechRecognition = () => {
 		recognition.continuous = true;
@@ -60,13 +74,17 @@ class App extends React.PureComponent<IProps, IState> {
 
 	updateImage = async () => {
 		const { item } = this.state;
-		const res = await fetch(
-			`http://api.giphy.com/v1/gifs/random?tag=${item.toLowerCase()}&api_key=qsJL0hUiBazkjkQTZWvgFX2ATawYOHcp&limit=1`
-		);
-		const giphyData = await res.json();
-		this.setState({
-			imageSrc: giphyData.data.image_url
-		});
+		try {
+			const res = await fetch(
+				`http://api.giphy.com/v1/gifs/random?tag=${item.toLowerCase()}&api_key=qsJL0hUiBazkjkQTZWvgFX2ATawYOHcp&limit=1`
+			);
+			const giphyData = await res.json();
+			this.setState({
+				imageSrc: giphyData.data.image_url
+			});
+		} catch (e) {
+			console.log(`Cannot update gif for item ${item}`, e);
+		}
 	};
 
 	private renderHint() {
@@ -80,10 +98,19 @@ class App extends React.PureComponent<IProps, IState> {
 		);
 	}
 
+	private renderDebug() {
+		return this.state.debug ? (
+			<div className={styles.StateWrapper}>
+				<pre>{JSON.stringify(this.state, null, 2)}</pre>
+			</div>
+		) : null;
+	}
+
 	render(): React.ReactNode {
 		const { item, transcription, imageSrc } = this.state;
 		return (
 			<div className={styles.App}>
+				{this.renderDebug()}
 				<div className={styles.RecognitionWrapper}>{transcription}</div>
 				<div className={styles.SearchWrapper}>
 					<span>#</span>
