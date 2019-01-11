@@ -1,6 +1,4 @@
-body {
-	font-family: Helvetica, Arial, sans-serif;
-}
+@import url("https://fonts.googleapis.com/css?family=Inknut+Antiqua|Space+Mono");
 
 button {
 	height: 30px;
@@ -19,8 +17,10 @@ img {
 }
 
 .RecognitionWrapper {
+	font-family: "Space Mono", monospace;
 	position: absolute;
-	color: red;
+	color: white;
+	background: black;
 	mix-blend-mode: multiply;
 	text-align: center;
 	bottom: 0vh;
@@ -32,16 +32,15 @@ img {
 }
 
 .SearchWrapper {
-	color: blue;
+	font-family: "Inknut Antiqua", serif;
+	color: black;
 	position: absolute;
 	right: 0vw;
 	left: 0;
 	top: 40vh;
 	text-align: center;
-	line-height: 7vw;
-	font-weight: 700;
+	font-weight: bold;
 	font-size: 20vw;
-	letter-spacing: -0.8vw;
 }
 
 .HintWrapper {
